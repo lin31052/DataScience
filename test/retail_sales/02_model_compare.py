@@ -48,8 +48,8 @@ def build_features(series):
     f["roll_std4"] = series.shift(1).rolling(4).std()
     # 同比前4周同周均值 (季节)
     f["roll_std4"] = f["roll_std4"].fillna(f["roll_std4"].mean())
-    # 差分
-    f["diff1"] = series.diff(1)
+    # 差分 (必须只用过去信息, shift后再diff避免泄漏当期值)
+    f["diff1"] = series.shift(1).diff(1)
     # 前一年同周 (周 53 太少, 用前4周均值近似季节)
     return f
 
@@ -165,7 +165,7 @@ def plot_task(index, yall, results_map, all_ytest, title, ylab, fname):
         split_pos = len(r["y_tr"])
         x = list(idx)[:split_pos]
         # 只画测试段
-        ax.plot(idx.iloc[split_pos:], pred, ls="--", lw=1.8, label=f'{nm} (RMSE=£{r["RMSE"]:,})')
+        ax.plot(idx[split_pos:], pred, ls="--", lw=1.8, label=f'{nm} (RMSE=£{r["RMSE"]:,})')
     split_pos = len([r for r in results_map.values()][0]["y_tr"])
     ax.axvline(idx[split_pos], color="gray", ls=":")
     ax.set_title(title)
