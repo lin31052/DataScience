@@ -11,34 +11,34 @@ import matplotlib.pyplot as plt
 import matplotlib.font_manager as fm
 import seaborn as sns
 
+# 必须在设置中文字体之前调用(否则 seaborn 会重置 rcParams 字体)
+sns.set_theme(style="whitegrid", palette="muted")
+
 # ---------- 中文字体自动适配 (CentOS/Ubuntu 通用) ----------
 def setup_chinese_font():
-    """注册系统可用中文字体, 返回可用族名列表"""
+    """显式注册中文字体文件, 返回可用族名列表"""
     import glob
-    candidates = []
-    # 常见中文字体文件路径 (Noto CJK / 文泉驿)
-    patterns = [
+    font_files = []
+    for pat in [
+        "/usr/share/fonts/**/wqy-microhei.ttc",
+        "/usr/share/fonts/**/wqy-zenhei.ttc",
         "/usr/share/fonts/**/NotoSansCJK*.ttc",
-        "/usr/share/fonts/**/wqy*.ttc",
-        "/usr/share/fonts/**/WenQuanYi*.ttc",
-        "/usr/share/fonts/**/wqy-*.ttc",
         "/usr/share/fonts/**/*CJK*.ttc",
         "/usr/share/fonts/**/*WenQuanYi*",
-    ]
-    for pat in patterns:
-        for fp in glob.glob(pat, recursive=True):
-            try:
-                fm.fontManager.addfont(fp)
-            except Exception:
-                pass
+    ]:
+        font_files += glob.glob(pat, recursive=True)
+    for fp in sorted(set(font_files)):
+        try:
+            fm.fontManager.addfont(fp)
+        except Exception:
+            pass
     # 收集可用中文字体族
-    zh_names = ["Noto Sans CJK JP", "Noto Sans CJK SC", "WenQuanYi Micro Hei",
-                "WenQuanYi Zen Hei", "Noto Sans CJK TC"]
+    zh_names = ["WenQuanYi Micro Hei", "WenQuanYi Zen Hei",
+                "Noto Sans CJK JP", "Noto Sans CJK SC"]
     available = [n for n in zh_names if any(f.name == n for f in fm.fontManager.ttflist)]
     if not available:
-        # 兜底: 扫描所有注册字体里含 CJK 的
         available = sorted({f.name for f in fm.fontManager.ttflist
-                            if any(k in f.name for k in ("CJK", "WenQuanYi", "wqy"))})
+                            if any(k in f.name for k in ("CJK", "WenQuanYi"))})
     return available
 
 zh_fonts = setup_chinese_font()
@@ -46,6 +46,8 @@ print("可用中文字体:", zh_fonts if zh_fonts else "无(将用默认字体)"
 if zh_fonts:
     plt.rcParams["font.family"] = "sans-serif"
     plt.rcParams["font.sans-serif"] = zh_fonts + ["DejaVu Sans"]
+    # 关键: 同时设置 font.family 直接指向第一个可用字体
+    fm.findfont(fm.FontProperties(family=zh_fonts[0]))  # 触发缓存
 plt.rcParams["axes.unicode_minus"] = False  # 负号显示
 
 # ---------- 1. 造数据 ----------
@@ -77,7 +79,6 @@ monthly = df.groupby("月")["销售额"].sum()
 print("\n月度销售趋势:\n", monthly.round(2).to_string())
 
 # ---------- 3. 可视化 (中文) ----------
-sns.set_theme(style="whitegrid", palette="muted")
 fig, axes = plt.subplots(2, 2, figsize=(14, 10))
 
 # 渠道占比
