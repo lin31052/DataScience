@@ -64,8 +64,11 @@ print(f"日销售额均值={rev.mean():,.0f}  最大值={rev.max():,.0f}")
 dow_stat = rev.groupby(rev.index.dayofweek).mean()
 dow_names = ["周一","周二","周三","周四","周五","周六","周日"]
 print("\n【星期几平均销售额】(揭示周期) ")
-for i in range(7):
-    print(f"  {dow_names[i]}: £{dow_stat.iloc[i]:,.0f}")
+for day_int in range(7):
+    if day_int in dow_stat.index:
+        print(f"  {dow_names[day_int]}: £{dow_stat.loc[day_int]:,.0f}")
+    else:
+        print(f"  {dow_names[day_int]}: 无数据")
 
 # ---------- 构造特征 ----------
 f = pd.DataFrame(index=rev.index)
@@ -169,9 +172,10 @@ plt.tight_layout()
 plt.savefig(f"{OUT}/forecast_daily_compare.png", dpi=100, bbox_inches="tight")
 plt.close()
 
-# 星期效应图
+# 星期效应图 (重排确保 0-6 对齐)
+dow_vals = [dow_stat.get(d, 0) if d in dow_stat.index else 0 for d in range(7)]
 fig2, ax2 = plt.subplots(figsize=(8, 4))
-sns.barplot(x=dow_names, y=dow_stat.values, palette="viridis", ax=ax2)
+sns.barplot(x=dow_names, y=dow_vals, palette="viridis", ax=ax2)
 ax2.set_title("星期几 平均销售额 (规律性)")
 ax2.set_ylabel("平均销售额 (£)")
 plt.tight_layout()
