@@ -151,19 +151,20 @@ print(f"\n🏆 日度最优: {scores_df.iloc[0]['模型']} (RMSE=£{scores_df.il
 
 # ---------- 画图: 测试段某个窗口 ----------
 fig, ax = plt.subplots(figsize=(13, 5.5))
-# 选最后一段做展示
+# 基于 X(含特征+dropna后) 的索引和最后测试窗口
 n_future = 14
-start_show = len(rev) - n_future
-tr = rev.iloc[:start_show]; te = rev.iloc[start_show:]
+start_show = len(X) - n_future   # 用 X 的长度(与 rev 对齐, dropna 影响开头)
+show_idx = X.index[start_show:]
+tr = rev[rev.index < show_idx[0]]; te = rev.loc[show_idx]
 colors = {"Naive(昨/上周)": "gray", "Drift(趋势)": "teal",
           "随机森林(日+lag7+星期)": "orange", "XGBoost(日+lag7+星期)": "crimson"}
 ax.plot(tr.index, tr.values, color="black", lw=2, label="训练(真实)")
 ax.plot(te.index, te.values, color="green", lw=2, label="测试(真实)")
 for name, fn in models.items():
-    # 要用最后段的训练X
-    Xtr, ytr, Xte_t = X.iloc[:start_show], y.iloc[:start_show], X.iloc[start_show:]
+    Xtr, ytr = X.iloc[:start_show], y.iloc[:start_show]
+    Xte_t = X.iloc[start_show:start_show+n_future]
     f = fn(Xtr, ytr, Xte_t)
-    ax.plot(te.index[:len(f)], f, ls="--", lw=1.5, color=colors[name], label=name)
+    ax.plot(show_idx[:len(f)], f, ls="--", lw=1.5, color=colors[name], label=name)
 ax.set_title("电商日度销售额预测: Naive/Drift/随机森林/XGBoost 对比 (日粒度)")
 ax.set_ylabel("日销售额 (£)")
 ax.legend(fontsize=8)
