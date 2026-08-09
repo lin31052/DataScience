@@ -71,6 +71,7 @@ def evaluate(X, y, split, model, name):
         "均值基线RMSE": round(rmse_base),
         "改进%": round((rmse_base - rmse) / rmse_base * 100),
         "pred": pred, "y_te": y_te, "y_tr": y_tr,
+        "idx_tr": list(X.index[:split]), "idx_te": list(X.index[split:]),
     }
 
 # ---------- 模型工厂 ----------
@@ -153,21 +154,22 @@ plt.rcParams["axes.unicode_minus"] = False
 OUT = os.getcwd() + "/test/retail_sales/output"
 os.makedirs(OUT, exist_ok=True)
 
-def plot_task(index, yall, results_map, all_ytest, title, ylab, fname):
-    """画真实vs各模型预测"""
+def plot_task(results_map, title, ylab, fname):
+    """用各模型返回的对齐时间索引画 真实vs各模型预测(测试段)"""
     fig, ax = plt.subplots(figsize=(13, 5.5))
-    idx = yall.index
-    ax.plot(idx, yall, color="black", lw=2, label="真实")
+    # 取第一个模型的训练/测试索引
+    r0 = list(results_map.values())[0]
+    idx_tr = r0["idx_tr"]; idx_te = r0["idx_te"]
+    # 完整真实序列 (训练+测试)
+    ytr_ts = pd.Series(r0["y_tr"], index=idx_tr)
+    yte_ts = pd.Series(r0["y_te"], index=idx_te)
+    ax.plot(idx_tr, ytr_ts, color="steelblue", lw=2, label="训练 (真实)")
+    ax.plot(idx_te, yte_ts, color="green", lw=2, label="测试 (真实)")
     colors = {"线性回归": "teal", "随机森林": "orange", "XGBoost": "crimson"}
     for nm, r in results_map.items():
-        te = r["y_te"]; pred = r["pred"]
-        # 测试段起点
-        split_pos = len(r["y_tr"])
-        x = list(idx)[:split_pos]
-        # 只画测试段
-        ax.plot(idx[split_pos:], pred, ls="--", lw=1.8, label=f'{nm} (RMSE=£{r["RMSE"]:,})')
-    split_pos = len([r for r in results_map.values()][0]["y_tr"])
-    ax.axvline(idx[split_pos], color="gray", ls=":")
+        ax.plot(r["idx_te"], r["pred"], ls="--", lw=1.8,
+                label=f'{nm} (RMSE=£{r["RMSE"]:,})')
+    ax.axvline(idx_te[0], color="gray", ls=":", label="训练/测试分界")
     ax.set_title(title)
     ax.set_ylabel(ylab)
     ax.legend()
@@ -176,13 +178,9 @@ def plot_task(index, yall, results_map, all_ytest, title, ylab, fname):
     plt.savefig(f"{OUT}/{fname}", dpi=100, bbox_inches="tight")
     plt.close()
 
-# A: 销售额 (用 XA feature 行时间序列)
-tsA_idx = feats_all.index
-feats_all_full = build_features(wk["Revenue"]); feats_all_full["target"]=wk["Revenue"]
-feats_all_full = feats_all_full.dropna()
-# 真实完整序列
-plot_task(0, wk["Revenue"], da, None, "电商周度销售额预测: 三模型对比", "销售额 (£)", "forecast_multi_revenue.png")
-plot_task(0, wk["Orders"], db, None, "电商周度订单量预测: 三模型对比", "订单量 (单)", "forecast_multi_orders.png")
+# 画图 (用各模型返回的时间索引)
+plot_task(da, "电商周度销售额预测: 三模型对比", "销售额 (£)", "forecast_multi_revenue.png")
+plot_task(db, "电商周度订单量预测: 三模型对比", "订单量 (单)", "forecast_multi_orders.png")
 
 # ---------- 汇总表 ----------
 print("\n" + "=" * 62)
