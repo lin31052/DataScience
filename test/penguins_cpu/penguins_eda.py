@@ -21,21 +21,37 @@ def log(msg):
     print(msg, flush=True)
     print('PROGRESS: ' + msg, file=sys.stderr, flush=True)
 
-# ---------- 中文字体 (Kaggle 镜像一般有 Noto CJK, 找不到则警告) ----------
+# ---------- 中文字体 (Kaggle 容器默认无中文字体 → 先 apt 安装再注册) ----------
 sns.set_theme(style="whitegrid", palette="muted")
-zh = []
-for pat in ["/usr/share/fonts/**/NotoSansCJK*.ttc", "/usr/share/fonts/**/*CJK*.ttc",
-            "/usr/share/fonts/**/wqy-*.ttc", "/usr/share/fonts/**/wqy*.ttc"]:
-    for fp in glob.glob(pat, recursive=True):
+def setup_chinese_font():
+    """Kaggle 容器版中文字体: 存在则直接用, 不存在则 apt 安装 fonts-noto-cjk"""
+    import subprocess, glob
+    found = []
+    for pat in ["/usr/share/fonts/**/NotoSansCJK*.ttc", "/usr/share/fonts/**/*CJK*.ttc",
+                "/usr/share/fonts/opentype/noto/*.ttc", "/usr/share/fonts/**/wqy*.ttc"]:
+        found += glob.glob(pat, recursive=True)
+    if not found:
+        log('中文字体缺失, 执行 apt-get install fonts-noto-cjk ...')
+        subprocess.run(["apt-get", "update", "-qq"], capture_output=True, timeout=180)
+        r = subprocess.run(["apt-get", "install", "-y", "-qq", "fonts-noto-cjk"],
+                           capture_output=True, text=True, timeout=300)
+        log('apt result: rc=' + str(r.returncode))
+        found = glob.glob("/usr/share/fonts/**/*CJK*.ttc", recursive=True) + \
+                glob.glob("/usr/share/fonts/opentype/noto/*.ttc", recursive=True)
+    for fp in sorted(set(found)):
         try:
             fm.fontManager.addfont(fp)
-            zh += [f.name for f in fm.fontManager.ttflist if f.name not in zh]
         except Exception:
             pass
+    zh = sorted({f.name for f in fm.fontManager.ttflist
+                 if any(k in f.name for k in ("CJK", "WenQuanYi"))})
+    return zh
+
+zh = setup_chinese_font()
 if zh:
     plt.rcParams["font.sans-serif"] = zh + ["DejaVu Sans"]
     plt.rcParams["axes.unicode_minus"] = False
-    log(f'中文字体: {sorted(set(zh))[:3]}')
+    log(f'中文字体: {zh}')
 else:
     log('WARNING: 未找到中文字体, 图内中文可能显示为方块')
 
