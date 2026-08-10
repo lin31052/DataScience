@@ -168,9 +168,9 @@ class ResNet50(nn.Module):  # 小图版: 3x3 stride1 stem, 无 maxpool (CIFAR �
         self.bn1 = nn.BatchNorm2d(64)
         self.relu = nn.ReLU(inplace=True)
         self.layer1 = self._make(64, 64, 3, 1, attn)
-        self.layer2 = self._make(64, 128, 4, 2, attn)
-        self.layer3 = self._make(128, 256, 6, 2, attn)
-        self.layer4 = self._make(256, 512, 3, 2, attn)
+        self.layer2 = self._make(64 * 4, 128, 4, 2, attn)
+        self.layer3 = self._make(128 * 4, 256, 6, 2, attn)
+        self.layer4 = self._make(256 * 4, 512, 3, 2, attn)
         self.avgpool = nn.AdaptiveAvgPool2d(1)
         self.fc = nn.Linear(512 * 4, num_classes)
     def _make(self, in_ch, out_ch, n, stride, attn):
