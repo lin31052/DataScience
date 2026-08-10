@@ -67,11 +67,11 @@ ax.set_xlabel("字符"); ax.set_ylabel("样本数")
 ax.set_ylim(0, max(vals) * 1.15)
 plt.tight_layout(); plt.savefig(f"{OUT}/char_eda_01_class_dist.png", dpi=110); plt.close()
 
-# ---------- 2. 样本网格 (前 10 数字 + 前 12 字母) ----------
-fig, axes = plt.subplots(4, 11, figsize=(13, 5.2))
-show_cls = cls_dirs[:22]
+# ---------- 2. 样本网格 (0-9 + A, 每类 5 个) ----------
+fig, axes = plt.subplots(11, 5, figsize=(9, 14))
+show_cls = cls_dirs[:11]
 for i, c in enumerate(show_cls):
-    files = sorted(os.listdir(os.path.join(DATA, c)))[:11]
+    files = sorted(os.listdir(os.path.join(DATA, c)))[:5]
     for j, f in enumerate(files):
         ax = axes[i, j]
         img = Image.open(os.path.join(DATA, c, f)).convert('L')
