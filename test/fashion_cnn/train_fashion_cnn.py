@@ -287,24 +287,25 @@ plt.tight_layout()
 plt.savefig(f'{outdir}/fashion_train_curve.png', dpi=120)
 plt.close()
 
-# 预测示例 (每类 3 张: 对/错标注)
-fig, axes = plt.subplots(4, 5, figsize=(12, 10))
-shown = {c: 0 for c in range(n_classes)}
+# 预测示例 (每类 2 张: 左=正确预测, 右=错误预测, 10行x2列)
+fig, axes = plt.subplots(n_classes, 2, figsize=(6, 16))
 rng = np.random.RandomState(42)
-order = rng.permutation(len(all_true))
-for i in order:
-    c = int(all_true[i])
-    if shown[c] >= 3:
-        continue
-    ok = all_preds[i] == c
-    axes[c // 3, (c % 3) * 2 if shown[c] == 0 else (c % 3) * 2 + 1].imshow(X_test[i, 0], cmap='gray')
-    ax = axes[c // 3, (c % 3) * 2 if shown[c] == 0 else (c % 3) * 2 + 1]
-    ax.set_title(('✓' if ok else f'✗→{LABELS[all_preds[i]]}'), fontsize=9,
-                 color='green' if ok else 'red')
-    ax.axis('off')
-    shown[c] += 1
-    if all(v >= 3 for v in shown.values()):
-        break
+for c in range(n_classes):
+    correct_idx = np.where((all_true == c) & (all_preds == c))[0]
+    wrong_idx = np.where((all_true == c) & (all_preds != c))[0]
+    if len(correct_idx) > 0:
+        i = rng.choice(correct_idx)
+        axes[c, 0].imshow(X_test[i, 0], cmap='gray')
+        axes[c, 0].set_title(f'✓ {LABELS[c]}', fontsize=9, color='green')
+    axes[c, 0].axis('off')
+    if len(wrong_idx) > 0:
+        i = rng.choice(wrong_idx)
+        axes[c, 1].imshow(X_test[i, 0], cmap='gray')
+        axes[c, 1].set_title(f'✗→{LABELS[all_preds[i]]}', fontsize=9, color='red')
+    axes[c, 1].axis('off')
+    if c == 0:
+        axes[0, 0].set_ylabel('正确预测', fontsize=10)
+        axes[0, 1].set_ylabel('错误预测', fontsize=10)
 fig.suptitle('Fashion-MNIST 预测示例 (✓=正确 ✗→=误判为)', fontsize=13)
 plt.tight_layout()
 plt.savefig(f'{outdir}/fashion_pred_examples.png', dpi=120)
