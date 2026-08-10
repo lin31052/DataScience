@@ -130,9 +130,11 @@ if csv:
     axes[1].set_title("验证指标曲线", fontsize=13); axes[1].set_xlabel("epoch"); axes[1].legend()
     plt.tight_layout(); plt.savefig(f"{OUT}/plate_03_metrics_zh.png", dpi=110); plt.close()
 
-# 4.2 验证集预测示例 (6 张) — 注意: 数据集图片可能是 .png, glob 必须同时匹配
-valid_imgs = sorted(glob.glob(f"{OUT}/yolo/images/valid/*.jpg") +
-                    glob.glob(f"{OUT}/yolo/images/valid/*.png"))[:6]
+# 4.2 验证集预测示例 (6 张) — 匹配所有文件(不依赖扩展名, 兼容 .jpg/.png/.PNG/.jpeg)
+valid_dir = f"{OUT}/yolo/images/valid"
+valid_imgs = sorted([os.path.join(valid_dir, f) for f in os.listdir(valid_dir)
+                     if os.path.isfile(os.path.join(valid_dir, f)) and os.path.getsize(os.path.join(valid_dir, f)) > 1000])[:6]
+log(f"预测示例图: {[os.path.basename(p) for p in valid_imgs]}")
 fig, axes = plt.subplots(2, 3, figsize=(14, 9))
 for ax, p in zip(axes.ravel(), valid_imgs):
     res = model.predict(p, conf=0.25, verbose=False)[0]
