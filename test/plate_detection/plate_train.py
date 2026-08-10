@@ -83,7 +83,7 @@ for x in valid_xmls: convert(x, f"{OUT}/yolo/images/valid", f"{OUT}/yolo/labels/
 
 with open(f"{OUT}/yolo/data.yaml", "w") as f:
     f.write("path: /kaggle/working/yolo\n")
-    f.write("train: images/train\nvalid: images/valid\n")
+    f.write("train: images/train\nval: images/valid\n")
     f.write("names:\n  0: license_plate\n")
 log("转换完成: " + str(len(os.listdir(f"{OUT}/yolo/images/train"))) + " train / " +
     str(len(os.listdir(f"{OUT}/yolo/images/valid"))) + " valid")
