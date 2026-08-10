@@ -84,11 +84,23 @@ for c, info in miss_info.items():
     log(f"  {c}: 缺失 {info['缺失数']} 条 ({info['缺失率%']}%)")
 report['missing'] = miss_info
 
-fig, ax = plt.subplots(figsize=(10, 4))
-sns.heatmap(df.isnull(), cbar=False, cmap="RdYlGn_r", yticklabels=False, ax=ax)
-ax.set_title("缺失值分布图（红色=缺失）", fontsize=14)
+fig, ax = plt.subplots(figsize=(9, 5))
+miss_all = df.isnull().sum()
+cols_all = df.columns.tolist()
+vals_all = [int(miss_all[c]) for c in cols_all]
+pcts_all = [round(miss_all[c] / len(df) * 100, 1) for c in cols_all]
+bars = ax.bar(cols_all, vals_all,
+              color=["#e74c3c" if v > 0 else "#95a5a6" for v in vals_all],
+              edgecolor="white")
+ax.set_title(f"缺失值数量分布（共 {int(miss_all.sum())} 个，总样本 {len(df)} 行）", fontsize=14)
+ax.set_xlabel("列名"); ax.set_ylabel("缺失数量（条）")
+for b, v, p in zip(bars, vals_all, pcts_all):
+    if v > 0:
+        ax.text(b.get_x() + b.get_width() / 2, v + 0.15, f"{v} 条\n({p}%)",
+                ha="center", fontsize=10)
+ax.set_ylim(0, max(vals_all) * 1.35 if max(vals_all) > 0 else 1)
 plt.tight_layout()
-plt.savefig(f"{OUT}/01_missing_heatmap.png", dpi=110)
+plt.savefig(f"{OUT}/01_missing_bar.png", dpi=110)
 plt.close()
 
 # ---------- 2. 核心统计 ----------
