@@ -39,8 +39,16 @@ log('STEP2_DONE')
 
 # ===== STEP3: T4 GPU 训练 =====
 log('STEP3: training on GPU...')
-subprocess.run(
+r = subprocess.run(
     [sys.executable, "-u",
      f"/kaggle/working/DataScience/{TRAIN_SCRIPT}"],
-    check=True)
+    capture_output=True, text=True)
+if r.returncode != 0:
+    log('TRAIN_FAILED exit=' + str(r.returncode))
+    log('--- stdout tail ---')
+    log((r.stdout or '')[-3000:])
+    log('--- stderr tail ---')
+    log((r.stderr or '')[-3000:])
+    sys.exit(1)
+log('TRAIN_STDOUT_TAIL: ' + (r.stdout or '')[-500:])
 log('ALL_DONE')

@@ -195,6 +195,11 @@ def main():
 
     names = ['lenet5', 'alexnet', 'resnet18']
     labels = ['LeNet-5 (1998)', 'AlexNet (2012)', 'ResNet18 (2015)']
+    only = os.environ.get('CIFAR_ONLY_MODEL')
+    if only:
+        names = [only]
+        labels = [labels[['lenet5', 'alexnet', 'resnet18'].index(only)]]
+        print(f'调试模式: 只训练 {only}', flush=True)
     results = {}
     curves = {}
     for name, lab in zip(names, labels):
