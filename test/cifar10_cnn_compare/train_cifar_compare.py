@@ -99,11 +99,35 @@ class LeNet5(nn.Module):
         return self.classifier(self.features(x).view(x.size(0), -1))
 
 
+class AlexNetCIFAR(nn.Module):
+    """AlexNet (2012) 架构适配 CIFAR-10 (32x32): 5 conv + 3 fc
+    原版 conv1 11x11/s4 + 3 个 maxpool 会把 32x32 压成 1x1, 必须适配:
+    改用 3x3 conv + 2x2 maxpool, 保留 AlexNet 的深卷积+大 FC 风格 (~36M 参数)"""
+
+    def __init__(self, num_classes=10):
+        super().__init__()
+        self.features = nn.Sequential(
+            nn.Conv2d(3, 64, 3, padding=1), nn.ReLU(inplace=True), nn.MaxPool2d(2),   # 32->16
+            nn.Conv2d(64, 192, 3, padding=1), nn.ReLU(inplace=True), nn.MaxPool2d(2), # 16->8
+            nn.Conv2d(192, 384, 3, padding=1), nn.ReLU(inplace=True),
+            nn.Conv2d(384, 256, 3, padding=1), nn.ReLU(inplace=True),
+            nn.Conv2d(256, 256, 3, padding=1), nn.ReLU(inplace=True), nn.MaxPool2d(2),  # 8->4
+        )
+        self.classifier = nn.Sequential(
+            nn.Dropout(), nn.Linear(256 * 4 * 4, 4096), nn.ReLU(inplace=True),
+            nn.Dropout(), nn.Linear(4096, 4096), nn.ReLU(inplace=True),
+            nn.Linear(4096, num_classes),
+        )
+
+    def forward(self, x):
+        return self.classifier(self.features(x).view(x.size(0), -1))
+
+
 def make_model(name):
     if name == 'lenet5':
         return LeNet5()
     if name == 'alexnet':
-        return torchvision.models.alexnet(weights=None, num_classes=10)
+        return AlexNetCIFAR()
     if name == 'resnet18':
         return torchvision.models.resnet18(weights=None, num_classes=10)
     raise ValueError(name)
