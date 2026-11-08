@@ -115,14 +115,22 @@ plt.tight_layout()
 plt.savefig(f"{OUT}/01_class_dist.png", dpi=120)
 plt.close()
 
-# ---------- 可视化 2: 样本网格 ----------
-fig, axes = plt.subplots(4, 8, figsize=(12, 6.5))
-for i, ax in enumerate(axes.flat):
-    img, label = raw_ds[i]
-    ax.imshow(img.permute(1, 2, 0).numpy())
-    ax.set_title(CLASS_ZH[label], fontsize=9)
-    ax.axis("off")
-fig.suptitle("CIFAR-10 样本示例（每行同一类别）", fontsize=13)
+# ---------- 可视化 2: 样本网格（每列一个类别，各 4 张）----------
+by_class = {c: [] for c in range(N_CLASS)}
+for i, label in enumerate(raw_ds.targets):
+    if len(by_class[label]) < 4:
+        by_class[label].append(i)
+
+fig, axes = plt.subplots(4, N_CLASS, figsize=(15, 6.6))
+for r in range(4):
+    for c in range(N_CLASS):
+        img, _ = raw_ds[by_class[c][r]]
+        ax = axes[r][c]
+        ax.imshow(img.permute(1, 2, 0).numpy())
+        if r == 0:
+            ax.set_title(CLASS_ZH[c], fontsize=11)
+        ax.axis("off")
+fig.suptitle("CIFAR-10 样本示例（每列一个类别，各 4 张）", fontsize=13)
 plt.tight_layout()
 plt.savefig(f"{OUT}/02_samples.png", dpi=120)
 plt.close()
@@ -212,6 +220,7 @@ fig, ax1 = plt.subplots(figsize=(7.5, 4.5))
 eps = list(range(1, EPOCHS + 1))
 ax1.plot(eps, hist["train_loss"], "o-", color="#E45756", label="训练损失")
 ax1.set_xlabel("epoch")
+ax1.set_xticks(eps)
 ax1.set_ylabel("损失", color="#E45756")
 ax2 = ax1.twinx()
 ax2.plot(eps, hist["train_acc"], "s--", color="#4C78A8", label="训练准确率")
